@@ -5,27 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class HomePage extends StatefulWidget {
-  @override
-  _HomePageState createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  TextEditingController _nameController = TextEditingController();
-  var myText = "Change ME";
-  var url = "https://jsonplaceholder.typicode.com/photos";
-  var data;
-
-  @override
-  void initState() {
-    super.initState();
-    getData();
-  }
-
-  getData() async {
+class HomePageFB extends StatelessWidget {
+  Future getData() async {
+    var url = "https://jsonplaceholder.typicode.com/photos";
     var res = await http.get(url);
-    data = jsonDecode(res.body);
-    setState(() {});
+    var data = jsonDecode(res.body);
+    // setState(() {});
+    return data;
     // print(res.body);
   }
 
@@ -44,33 +30,48 @@ class _HomePageState extends State<HomePage> {
               })
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: data != null
-            ? ListView.builder(
+      body: FutureBuilder(
+        future: getData(),
+        // ignore: missing_return
+        builder: (context, snapshot) {
+          switch (snapshot.connectionState) {
+            case (ConnectionState.none):
+              return Center(
+                child: Text("Fetch Something"),
+              );
+            case (ConnectionState.active):
+            case (ConnectionState.waiting):
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            case (ConnectionState.done):
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text("Some Error occured!"),
+                );
+              }
+              return ListView.builder(
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: ListTile(
-                      title: Text(data[index]["title"]),
-                      subtitle: Text("ID: ${data[index]["id"]}"),
-                      leading: Image.network(data[index]["url"]),
+                      title: Text(snapshot.data[index]["title"]),
+                      subtitle: Text("ID: ${snapshot.data[index]["id"]}"),
+                      leading: Image.network(snapshot.data[index]["url"]),
                     ),
                   );
                 },
-                itemCount: data.length,
-              )
-            : Center(
-                child: CircularProgressIndicator(
-                backgroundColor: Colors.white,
-              )),
+                itemCount: snapshot.data.length,
+              );
+          }
+        },
       ),
       drawer: MyDrawer(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          myText = _nameController.text;
-          setState(() {});
+          // myText = _nameController.text;
+          // setState(() {});
         },
         child: Icon(Icons.refresh),
       ),
